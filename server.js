@@ -2,17 +2,13 @@ const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { HttpsProxyAgent } = require('https-proxy-agent');
-const tunnel = require('tunnel');
+const { ProxyAgent } = require('proxy-agent');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Configurações do proxy BrightData
-const PROXY_HOST = 'brd.superproxy.io';
-const PROXY_PORT = 33335;
-const PROXY_USER = 'brd-customer-hl_a5695247-zone-residential_proxy1';
-const PROXY_PASS = '9bt6utixk5tb';
+const PROXY_URL = `http://brd-customer-hl_a5695247-zone-residential_proxy1:9bt6utixk5tb@brd.superproxy.io:33335`;
 
 app.use(bodyParser.json());
 app.use(cors({
@@ -26,21 +22,16 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
     try {
         const { cpf } = req.params;
 
-        // Configuração do túnel HTTPS
-        const tunnelingAgent = tunnel.httpsOverHttp({
-            proxy: {
-                host: PROXY_HOST,
-                port: PROXY_PORT,
-                proxyAuth: `${PROXY_USER}:${PROXY_PASS}`
-            }
-        });
+        // Cria um agente de proxy
+        const agent = new ProxyAgent(PROXY_URL);
 
         console.log('Iniciando requisição para CPF:', cpf);
 
         const response = await axios({
             method: 'get',
             url: `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`,
-            httpsAgent: tunnelingAgent,
+            httpAgent: agent,
+            httpsAgent: agent,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'application/json',
