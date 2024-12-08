@@ -19,7 +19,7 @@ app.use(cors({
 // Middleware adicional para garantir que apenas as origens permitidas tenham acesso
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin === 'https://testecnh.vercel.app' || origin === 'http://testecnh.vercel.app') {
+    if (origin === 'https://testecnh.vercel.app' || origin === 'http://127.0.0.1:5500') {
         next();
     } else {
         res.status(403).json({ 
