@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 
 // Configuração do CORS apenas para testecnh.vercel.app
 app.use(cors({
-    origin: ['https://testecnh.vercel.app', 'http://127.0.0.1:5500'],
+    origin: ['https://testechnn.vercel.app', 'http://127.0.0.1:5500'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true // Permite credenciais
@@ -19,7 +19,7 @@ app.use(cors({
 // Middleware adicional para garantir que apenas as origens permitidas tenham acesso
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin === 'https://testecnh.vercel.app' || origin === 'http://127.0.0.1:5500') {
+    if (origin === 'https://testechnn.vercel.app' || origin === 'http://127.0.0.1:5500') {
         next();
     } else {
         res.status(403).json({ 
