@@ -1,8 +1,8 @@
 const express = require('express');
-const axios = require('axios');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { ProxyAgent } = require('proxy-agent');
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,28 +27,33 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
 
         console.log('Iniciando requisição para CPF:', cpf);
 
-        const response = await axios({
-            method: 'get',
-            url: `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`,
-            httpAgent: agent,
-            httpsAgent: agent,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'application/json',
-                'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-                'Connection': 'keep-alive'
-            },
-            timeout: 30000,
-            maxRedirects: 5,
-            validateStatus: null
-        });
+        const response = await fetch(
+            `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`,
+            {
+                method: 'GET',
+                agent,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/json',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Connection': 'keep-alive'
+                }
+            }
+        );
 
         console.log('Status da resposta:', response.status);
-        console.log('Headers da resposta:', response.headers);
-        console.log('Dados da resposta:', response.data);
+        console.log('Headers da resposta:', Object.fromEntries(response.headers));
 
-        if (response.status === 200 && response.data) {
-            res.json(response.data);
+        const data = await response.text();
+        console.log('Dados da resposta:', data);
+
+        if (response.ok) {
+            try {
+                const jsonData = JSON.parse(data);
+                res.json(jsonData);
+            } catch (e) {
+                throw new Error('Resposta não é um JSON válido');
+            }
         } else {
             throw new Error(`Resposta inválida: Status ${response.status}`);
         }
@@ -60,16 +65,14 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
             response: {
                 status: error.response?.status,
                 statusText: error.response?.statusText,
-                data: error.response?.data,
-                headers: error.response?.headers
+                data: error.response?.data
             }
         });
 
         res.status(500).json({ 
             status: 0, 
             error: 'Erro ao consultar CPF',
-            details: error.message,
-            fullError: error.response?.data || error.message
+            details: error.message
         });
     }
 });
