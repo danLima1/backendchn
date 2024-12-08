@@ -2,13 +2,16 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const fetch = require('node-fetch');
-const { SocksProxyAgent } = require('socks-proxy-agent');
+const HttpsProxyAgent = require('https-proxy-agent');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurações do proxy BrightData (SOCKS)
-const PROXY_URL = 'socks5h://brd-customer-hl_a5695247-zone-residential_proxy1:9bt6utixk5tb@zproxy.lum-superproxy.io:33335';
+// Configurações do proxy BrightData
+const PROXY_HOST = 'brd.superproxy.io';
+const PROXY_PORT = '22225'; // Porta HTTP
+const PROXY_USER = 'brd-customer-hl_a5695247-zone-residential_proxy1';
+const PROXY_PASS = '9bt6utixk5tb';
 
 app.use(bodyParser.json());
 app.use(cors({
@@ -22,8 +25,9 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
     try {
         const { cpf } = req.params;
 
-        // Cria um agente SOCKS proxy
-        const agent = new SocksProxyAgent(PROXY_URL);
+        // Configuração do proxy com autenticação
+        const proxyUrl = `http://${PROXY_USER}:${PROXY_PASS}@${PROXY_HOST}:${PROXY_PORT}`;
+        const proxyAgent = new HttpsProxyAgent(proxyUrl);
 
         console.log('Iniciando requisição para CPF:', cpf);
 
@@ -31,23 +35,20 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
             `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`,
             {
                 method: 'GET',
-                agent,
+                agent: proxyAgent,
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Accept': 'application/json',
                     'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
                     'Connection': 'keep-alive',
                     'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache',
-                    'Sec-Fetch-Dest': 'empty',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Site': 'same-origin'
-                }
+                    'Pragma': 'no-cache'
+                },
+                timeout: 30000
             }
         );
 
         console.log('Status da resposta:', response.status);
-        console.log('Headers da resposta:', Object.fromEntries(response.headers));
 
         const data = await response.text();
         console.log('Dados da resposta:', data);
@@ -66,12 +67,7 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
     } catch (error) {
         console.error('Erro detalhado:', {
             message: error.message,
-            stack: error.stack,
-            response: {
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                data: error.response?.data
-            }
+            stack: error.stack
         });
 
         res.status(500).json({ 
