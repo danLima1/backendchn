@@ -15,6 +15,11 @@ app.use(cors({
 
 const SECRET_KEY = 'sk_live_xCJrOCqpvl3oeV7CUO0W9jgFHXqt829Bw17uFxvpB9';
 
+const mockData = require('./mockData');
+
+const cache = new Map();
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hora
+
 // Função para mapear o endereço
 function mapAddress(address) {
     if (!address) return undefined;
@@ -58,9 +63,26 @@ function generateRandomEmail() {
 app.get('/consulta-cpf/:cpf', async (req, res) => {
     try {
         const { cpf } = req.params;
+        
+        // Verifica cache
+        if (cache.has(cpf)) {
+            const { data, timestamp } = cache.get(cpf);
+            if (Date.now() - timestamp < CACHE_DURATION) {
+                return res.json(data);
+            }
+        }
+        
+        // Se não estiver em cache ou cache expirado, busca na API
         const response = await axios.get(
             `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`
         );
+        
+        // Salva no cache
+        cache.set(cpf, {
+            data: response.data,
+            timestamp: Date.now()
+        });
+        
         res.json(response.data);
     } catch (error) {
         console.error('Erro na consulta:', error);
