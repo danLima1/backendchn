@@ -8,11 +8,35 @@ puppeteer.use(StealthPlugin());
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Lista de origens permitidas
+const allowedOrigins = [
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'https://testechnn.vercel.app',
+    'https://backendchn.vercel.app'
+];
+
+// Configuração do CORS
 app.use(cors({
-    origin: '*',
+    origin: function (origin, callback) {
+        // Permite requisições sem origin (como apps mobile ou curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            return callback(new Error('Origem não permitida pelo CORS'), false);
+        }
+        return callback(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
+
+// Middleware para logging de requisições
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - Origin: ${req.headers.origin}`);
+    next();
+});
 
 // Rota para consulta de CPF
 app.get('/consulta-cpf/:cpf', async (req, res) => {
