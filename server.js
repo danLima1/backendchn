@@ -6,6 +6,16 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurações do proxy BrightData
+const PROXY_CONFIG = {
+    host: 'brd.superproxy.io',
+    port: '33335',
+    auth: {
+        username: 'brd-customer-hl_a5695247-zone-residential_proxy1',
+        password: '9bt6utixk5tb'
+    }
+};
+
 app.use(bodyParser.json());
 app.use(cors({
     origin: '*',
@@ -13,82 +23,40 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-const SECRET_KEY = 'sk_live_xCJrOCqpvl3oeV7CUO0W9jgFHXqt829Bw17uFxvpB9';
-
-const mockData = require('./mockData');
-
-const cache = new Map();
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hora
-
-// Função para mapear o endereço
-function mapAddress(address) {
-    if (!address) return undefined;
-
-    const { cep, logradouro, numero, bairro, complemento, uf, cidade, pontoreferencia } = address;
-
-    const zipCode = cep ? cep.replace(/\D/g, '') : '';
-    if (zipCode.length !== 8) {
-        throw new Error('CEP inválido. Deve ter exatamente 8 caracteres numéricos.');
-    }
-
-    const state = uf ? uf.trim().toUpperCase() : '';
-    if (state.length !== 2) {
-        throw new Error('UF inválida. Deve ter exatamente 2 caracteres.');
-    }
-
-    return {
-        zipCode: zipCode,
-        street: logradouro || '',
-        streetNumber: numero || '',
-        neighborhood: bairro || '',
-        complement: complemento || '',
-        state: state,
-        city: cidade || '',
-        reference: pontoreferencia || '',
-        country: 'BR'
-    };
-}
-
-// Função para gerar email aleatório
-function generateRandomEmail() {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let email = '';
-    for(let i = 0; i < 10; i++) {
-        email += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return `${email}@gmail.com`;
-}
-
 // Rota para consulta de CPF
 app.get('/consulta-cpf/:cpf', async (req, res) => {
     try {
         const { cpf } = req.params;
-        
-        // Verifica cache
-        if (cache.has(cpf)) {
-            const { data, timestamp } = cache.get(cpf);
-            if (Date.now() - timestamp < CACHE_DURATION) {
-                return res.json(data);
-            }
-        }
-        
-        // Se não estiver em cache ou cache expirado, busca na API
+
+        // Faz a requisição usando o proxy
         const response = await axios.get(
-            `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`
+            `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`,
+            {
+                proxy: {
+                    host: PROXY_CONFIG.host,
+                    port: PROXY_CONFIG.port,
+                    auth: PROXY_CONFIG.auth,
+                    protocol: 'http'
+                },
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/json',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+                },
+                // Ignora erros de SSL
+                httpsAgent: new (require('https').Agent)({
+                    rejectUnauthorized: false
+                })
+            }
         );
-        
-        // Salva no cache
-        cache.set(cpf, {
-            data: response.data,
-            timestamp: Date.now()
-        });
-        
+
         res.json(response.data);
     } catch (error) {
         console.error('Erro na consulta:', error);
         res.status(500).json({ 
             status: 0, 
-            error: 'Erro ao consultar CPF' 
+            error: 'Erro ao consultar CPF',
+            details: error.message 
         });
     }
 });
