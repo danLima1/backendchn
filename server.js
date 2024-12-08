@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 
 // Configuração do CORS apenas para testecnh.vercel.app
 app.use(cors({
-    origin: ['https://testechnn.vercel.app', 'http://127.0.0.1:5500'],
+    origin: ['https://testechnn.vercel.app', 'https://testechnn.vercel.app'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true // Permite credenciais
@@ -19,7 +19,7 @@ app.use(cors({
 // Middleware adicional para garantir que apenas as origens permitidas tenham acesso
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin === 'https://testechnn.vercel.app' || origin === 'http://127.0.0.1:5500') {
+    if (origin === 'https://testechnn.vercel.app' || origin === 'https://testechnn.vercel.app') {
         next();
     } else {
         res.status(403).json({ 
@@ -83,26 +83,49 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
                     'Accept': 'application/json',
                     'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
                     'Origin': 'https://x-search.xyz',
-                    'Referer': 'https://x-search.xyz/'
+                    'Referer': 'https://x-search.xyz/',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Connection': 'keep-alive'
                 },
-                proxy: {
-                    host: 'proxy.example.com', // Substitua pelo seu proxy
-                    port: 8080,
-                    auth: {
-                        username: 'user',
-                        password: 'pass'
-                    }
+                timeout: 10000,
+                validateStatus: function (status) {
+                    return status >= 200 && status < 500;
                 }
             }
         );
 
+        if (response.data.includes('Attention Required! | Cloudflare')) {
+            return res.status(403).json({
+                status: 0,
+                error: 'Acesso bloqueado pelo Cloudflare',
+                message: 'Tente novamente mais tarde'
+            });
+        }
+
         res.json(response.data);
     } catch (error) {
         console.error('Erro na consulta:', error);
-        res.status(500).json({ 
-            status: 0, 
-            error: 'Erro ao consultar CPF' 
-        });
+        
+        if (error.response) {
+            res.status(error.response.status).json({
+                status: 0,
+                error: 'Erro na consulta',
+                message: error.response.data
+            });
+        } else if (error.request) {
+            res.status(504).json({
+                status: 0,
+                error: 'Tempo de resposta excedido',
+                message: 'O servidor não respondeu a tempo'
+            });
+        } else {
+            res.status(500).json({
+                status: 0,
+                error: 'Erro interno',
+                message: 'Erro ao processar a requisição'
+            });
+        }
     }
 });
 
