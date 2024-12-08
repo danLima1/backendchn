@@ -58,9 +58,28 @@ function generateRandomEmail() {
 app.get('/consulta-cpf/:cpf', async (req, res) => {
     try {
         const { cpf } = req.params;
+        
         const response = await axios.get(
-            `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`
+            `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`,
+            {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/json',
+                    'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Origin': 'https://x-search.xyz',
+                    'Referer': 'https://x-search.xyz/'
+                },
+                proxy: {
+                    host: 'proxy.example.com', // Substitua pelo seu proxy
+                    port: 8080,
+                    auth: {
+                        username: 'user',
+                        password: 'pass'
+                    }
+                }
+            }
         );
+
         res.json(response.data);
     } catch (error) {
         console.error('Erro na consulta:', error);
