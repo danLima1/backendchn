@@ -1,14 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { ProxyAgent } = require('proxy-agent');
 const fetch = require('node-fetch');
+const { SocksProxyAgent } = require('socks-proxy-agent');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurações do proxy BrightData
-const PROXY_URL = `http://brd-customer-hl_a5695247-zone-residential_proxy1:9bt6utixk5tb@brd.superproxy.io:33335`;
+// Configurações do proxy BrightData (SOCKS)
+const PROXY_URL = 'socks5h://brd-customer-hl_a5695247-zone-residential_proxy1:9bt6utixk5tb@zproxy.lum-superproxy.io:33335';
 
 app.use(bodyParser.json());
 app.use(cors({
@@ -22,8 +22,8 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
     try {
         const { cpf } = req.params;
 
-        // Cria um agente de proxy
-        const agent = new ProxyAgent(PROXY_URL);
+        // Cria um agente SOCKS proxy
+        const agent = new SocksProxyAgent(PROXY_URL);
 
         console.log('Iniciando requisição para CPF:', cpf);
 
@@ -36,7 +36,12 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Accept': 'application/json',
                     'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-                    'Connection': 'keep-alive'
+                    'Connection': 'keep-alive',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Sec-Fetch-Dest': 'empty',
+                    'Sec-Fetch-Mode': 'cors',
+                    'Sec-Fetch-Site': 'same-origin'
                 }
             }
         );
