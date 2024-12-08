@@ -8,38 +8,13 @@ const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Configuração do CORS apenas para os domínios permitidos
+// Configuração do CORS
 app.use(cors({
-    origin: [
-        'https://testechnn.vercel.app',
-        'https://backendchn.onrender.com',
-        'http://localhost:5500', // Para desenvolvimento local
-        'http://127.0.0.1:5500'  // Para desenvolvimento local
-    ],
+    origin: '*', // Permite todas as origens durante os testes
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    credentials: false // Desabilita credentials por enquanto
 }));
-
-// Middleware adicional para garantir que apenas as origens permitidas tenham acesso
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    const allowedOrigins = [
-        'https://testechnn.vercel.app',
-        'https://backendchn.onrender.com',
-        'http://localhost:5500',
-        'http://127.0.0.1:5500'
-    ];
-
-    if (allowedOrigins.includes(origin)) {
-        next();
-    } else {
-        res.status(403).json({ 
-            error: 'Acesso não autorizado',
-            message: 'Esta API só pode ser acessada através de domínios autorizados'
-        });
-    }
-});
 
 const SECRET_KEY = 'sk_live_xCJrOCqpvl3oeV7CUO0W9jgFHXqt829Bw17uFxvpB9';
 
@@ -84,9 +59,13 @@ function generateRandomEmail() {
 
 // Rota para consulta de CPF
 app.get('/consulta-cpf/:cpf', async (req, res) => {
+    console.log('Recebendo requisição para CPF:', req.params.cpf);
+    console.log('Headers:', req.headers);
+    
     try {
         const { cpf } = req.params;
         
+        console.log('Fazendo requisição para API externa...');
         const response = await axios.get(
             `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`,
             {
@@ -100,44 +79,29 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
                     'Pragma': 'no-cache',
                     'Connection': 'keep-alive'
                 },
-                timeout: 10000,
-                validateStatus: function (status) {
-                    return status >= 200 && status < 500;
-                }
+                timeout: 30000, // Aumentado para 30 segundos
             }
         );
-
-        if (response.data.includes('Attention Required! | Cloudflare')) {
-            return res.status(403).json({
-                status: 0,
-                error: 'Acesso bloqueado pelo Cloudflare',
-                message: 'Tente novamente mais tarde'
-            });
-        }
+        console.log('Resposta da API externa:', response.data);
 
         res.json(response.data);
     } catch (error) {
-        console.error('Erro na consulta:', error);
+        console.error('Erro detalhado:', {
+            message: error.message,
+            stack: error.stack,
+            response: error.response?.data,
+            status: error.response?.status
+        });
         
-        if (error.response) {
-            res.status(error.response.status).json({
-                status: 0,
-                error: 'Erro na consulta',
-                message: error.response.data
-            });
-        } else if (error.request) {
-            res.status(504).json({
-                status: 0,
-                error: 'Tempo de resposta excedido',
-                message: 'O servidor não respondeu a tempo'
-            });
-        } else {
-            res.status(500).json({
-                status: 0,
-                error: 'Erro interno',
-                message: 'Erro ao processar a requisição'
-            });
-        }
+        res.status(500).json({
+            status: 0,
+            error: 'Erro na consulta',
+            details: error.message,
+            serverInfo: {
+                timestamp: new Date().toISOString(),
+                environment: process.env.NODE_ENV
+            }
+        });
     }
 });
 
