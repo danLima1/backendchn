@@ -8,23 +8,35 @@ const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Configuração do CORS apenas para testecnh.vercel.app
+// Configuração do CORS apenas para os domínios permitidos
 app.use(cors({
-    origin: ['https://testechnn.vercel.app', 'https://testechnn.vercel.app'],
+    origin: [
+        'https://testechnn.vercel.app',
+        'https://backendchn.onrender.com',
+        'http://localhost:5500', // Para desenvolvimento local
+        'http://127.0.0.1:5500'  // Para desenvolvimento local
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true // Permite credenciais
+    credentials: true
 }));
 
 // Middleware adicional para garantir que apenas as origens permitidas tenham acesso
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin === 'https://testechnn.vercel.app' || origin === 'https://testechnn.vercel.app') {
+    const allowedOrigins = [
+        'https://testechnn.vercel.app',
+        'https://backendchn.onrender.com',
+        'http://localhost:5500',
+        'http://127.0.0.1:5500'
+    ];
+
+    if (allowedOrigins.includes(origin)) {
         next();
     } else {
         res.status(403).json({ 
             error: 'Acesso não autorizado',
-            message: 'Esta API só pode ser acessada através de testecnh.vercel.app'
+            message: 'Esta API só pode ser acessada através de domínios autorizados'
         });
     }
 });
