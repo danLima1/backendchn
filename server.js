@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const fetch = require('node-fetch');
-const HttpsProxyAgent = require('https-proxy-agent');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +30,7 @@ app.get('/consulta-cpf/:cpf', async (req, res) => {
         const proxyAgent = new HttpsProxyAgent(proxyUrl);
 
         console.log('Iniciando requisição para CPF:', cpf);
+        console.log('Usando proxy:', proxyUrl);
 
         const response = await fetch(
             `https://x-search.xyz/3nd-p01n75/xsiayer0-0t/lunder231224/r0070x/05/cpf.php?cpf=${cpf}`,
