@@ -7,11 +7,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
+
+// Configuração do CORS apenas para testecnh.vercel.app
 app.use(cors({
-    origin: '*',
+    origin: ['https://testecnh.vercel.app', 'http://127.0.0.1:5500'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true // Permite credenciais
 }));
+
+// Middleware adicional para garantir que apenas as origens permitidas tenham acesso
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin === 'https://testecnh.vercel.app' || origin === 'http://testecnh.vercel.app') {
+        next();
+    } else {
+        res.status(403).json({ 
+            error: 'Acesso não autorizado',
+            message: 'Esta API só pode ser acessada através de testecnh.vercel.app'
+        });
+    }
+});
 
 const SECRET_KEY = 'sk_live_xCJrOCqpvl3oeV7CUO0W9jgFHXqt829Bw17uFxvpB9';
 
