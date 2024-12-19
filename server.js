@@ -13,7 +13,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-const SECRET_KEY = 'sk_live_xCJrOCqpvl3oeV7CUO0W9jgFHXqt829Bw17uFxvpB9';
+const SECRET_KEY = 'sk_live_BqLbT2Z47GWz20oycTvL1ga8TGYg8ZRmVmc1PKQCu9';
 
 // Função para mapear o endereço
 function mapAddress(address) {
